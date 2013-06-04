@@ -71,6 +71,7 @@
 #include "common/command_line.h"
 #include "common/ebml.h"
 #include "common/endian.h"
+#include "common/hevc.h"
 #include "common/kax_file.h"
 #include "common/matroska.h"
 #include "common/mm_io.h"
@@ -356,6 +357,15 @@ create_codec_dependent_private_info(KaxCodecPrivate &c_priv,
                : avcc.m_profile_idc == 244 ? "High 4:4:4 Predictive"
                :                             Y("Unknown"))
             % (avcc.m_level_idc / 10) % (avcc.m_level_idc % 10)).str();
+  } else if ((codec_id == MKV_V_MPEGH_HEVC) && ('v' == track_type) && (c_priv.GetSize() >= 4)) {
+    auto hevcc = hevc::hevcc_c::unpack(memory_cptr{new memory_c(c_priv.GetBuffer(), c_priv.GetSize(), false)});
+
+    return (boost::format(Y(" (HEVC profile: %1% @L%2%.%3%)"))
+            % (  hevcc.m_profile_idc ==   1 ? "Main"
+               : hevcc.m_profile_idc ==   2 ? "Main 10"
+               : hevcc.m_profile_idc ==   3 ? "Main Still Picture"
+               :                             Y("Unknown"))
+            % (hevcc.m_level_idc / 3 / 10) % (hevcc.m_level_idc / 3 % 10)).str();
   }
 
   return "";

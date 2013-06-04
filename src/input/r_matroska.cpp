@@ -66,6 +66,8 @@
 #if defined(HAVE_FLAC_FORMAT_H)
 # include "output/p_flac.h"
 #endif
+#include "output/p_hevc.h"
+#include "output/p_hevc_es.h"
 #include "output/p_kate.h"
 #include "output/p_mp3.h"
 #include "output/p_mpeg1_2.h"
@@ -1344,6 +1346,9 @@ kax_reader_c::create_video_packetizer(kax_track_t *t,
     } else if (t->codec_id == MKV_V_MPEG4_AVC)
       create_mpeg4_p10_video_packetizer(t, nti);
 
+    else if (t->codec_id == MKV_V_MPEGH_HEVC)
+      create_hevc_video_packetizer(t, nti);
+
     else if (t->codec_id == MKV_V_THEORA) {
       set_track_packetizer(t, new theora_video_packetizer_c(this, nti, t->v_frate, t->v_width, t->v_height));
       show_packetizer_info(t->tnum, t->ptzr_ptr);
@@ -1480,6 +1485,30 @@ kax_reader_c::create_flac_audio_packetizer(kax_track_t *t,
 }
 
 #endif  // HAVE_FLAC_FORMAT_H
+
+void
+kax_reader_c::create_hevc_es_video_packetizer(kax_track_t *t,
+                                              track_info_c &nti) {
+  hevc_es_video_packetizer_c *ptzr = new hevc_es_video_packetizer_c(this, nti);
+  set_track_packetizer(t, ptzr);
+
+  ptzr->set_video_pixel_dimensions(t->v_width, t->v_height);
+
+  show_packetizer_info(t->tnum, t->ptzr_ptr);
+}
+
+void
+kax_reader_c::create_hevc_video_packetizer(kax_track_t *t,
+                                           track_info_c &nti) {
+  if (!nti.m_private_data || !nti.m_private_data->get_size()) {
+    // avc_es_parser_cptr parser = parse_first_hevc_frame(t, nti);
+    create_hevc_es_video_packetizer(t, nti);
+    return;
+  }
+
+  set_track_packetizer(t, new hevc_video_packetizer_c(this, nti, t->v_frate, t->v_width, t->v_height));
+  show_packetizer_info(t->tnum, t->ptzr_ptr);
+}
 
 void
 kax_reader_c::create_mp3_audio_packetizer(kax_track_t *t,
@@ -2190,6 +2219,8 @@ kax_reader_c::identify() {
       verbose_info.push_back("packetizer:mpeg4_p10_es_video");
     else if (track->codec_id == MKV_V_MPEG4_AVC)
       verbose_info.push_back("packetizer:mpeg4_p10_video");
+    else if (track->codec_id == MKV_V_MPEGH_HEVC)
+      verbose_info.push_back("packetizer:hevc_es_video");
 
     if (0 != track->default_duration)
       verbose_info.push_back((boost::format("default_duration:%1%") % track->default_duration).str());
