@@ -25,7 +25,7 @@
 #include "common/strings/parsing.h"
 #include "common/version.h"
 
-#define VERSIONNAME "Promised Land" " Rovi v1.0.0"
+#define VERSIONNAME "Promised Land" " Rovi v1.0.1"
 
 version_number_t::version_number_t()
   : valid(false)
